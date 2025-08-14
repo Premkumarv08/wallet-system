@@ -1,16 +1,42 @@
 import { useState } from 'react';
 import { Link } from 'react-router-dom';
 import { useWallet } from '../context/WalletContext';
-import { Wallet, ArrowUpRight, ArrowDownRight, LogOut } from 'lucide-react';
+import { Wallet, ArrowUpRight, ArrowDownRight, LogOut, User, DollarSign, RefreshCw } from 'lucide-react';
 
-const WalletDashboard = () => {
-  const { wallet, createTransaction, clearWallet, loading, error } = useWallet();
+const WalletScreen = () => {
+  const { wallet, setupWallet, createTransaction, clearWallet, refreshWallet, loading, error } = useWallet();
+  const [formData, setFormData] = useState({
+    name: '',
+    balance: ''
+  });
   const [transactionData, setTransactionData] = useState({
     amount: '',
     description: '',
     type: 'CREDIT'
   });
 
+  // Handle wallet setup
+  const handleWalletSetup = async (e) => {
+    e.preventDefault();
+    
+    if (!formData.name.trim()) {
+      alert('Please enter a username');
+      return;
+    }
+
+    const balance = parseFloat(formData.balance) || 0;
+    
+    try {
+      await setupWallet({
+        name: formData.name.trim(),
+        balance
+      });
+    } catch (err) {
+      // Error is handled by the context
+    }
+  };
+
+  // Handle transaction submission
   const handleTransactionSubmit = async (e) => {
     e.preventDefault();
     
@@ -43,6 +69,14 @@ const WalletDashboard = () => {
 
   const handleInputChange = (e) => {
     const { name, value } = e.target;
+    setFormData(prev => ({
+      ...prev,
+      [name]: value
+    }));
+  };
+
+  const handleTransactionInputChange = (e) => {
+    const { name, value } = e.target;
     setTransactionData(prev => ({
       ...prev,
       [name]: value
@@ -55,13 +89,89 @@ const WalletDashboard = () => {
     }
   };
 
+  const handleRefresh = async () => {
+    try {
+      await refreshWallet();
+    } catch (err) {
+      console.error('Failed to refresh wallet:', err);
+    }
+  };
+
+  // Screen 1: Wallet Initialization (when no wallet exists)
   if (!wallet) {
-    return null; // This should not happen as this component is only shown when wallet exists
+    return (
+      <div className="min-h-screen bg-gradient-to-br from-blue-50 to-indigo-100 flex items-center justify-center p-4">
+        <div className="max-w-md w-full bg-white rounded-lg shadow-lg p-8">
+          <div className="text-center mb-8">
+            <div className="mx-auto w-16 h-16 bg-blue-100 rounded-full flex items-center justify-center mb-4">
+              <Wallet className="w-8 h-8 text-blue-600" />
+            </div>
+            <h1 className="text-3xl font-bold text-gray-900 mb-2">Welcome to Wallet System</h1>
+            <p className="text-gray-600">Create your wallet to get started</p>
+          </div>
+
+          {error && (
+            <div className="mb-6 p-4 bg-red-50 border border-red-200 rounded-lg">
+              <p className="text-red-600 text-sm">{error}</p>
+            </div>
+          )}
+
+          <form onSubmit={handleWalletSetup} className="space-y-6">
+            <div>
+              <label htmlFor="name" className="block text-sm font-medium text-gray-700 mb-2">
+                <User className="w-4 h-4 inline mr-1" />
+                Username *
+              </label>
+              <input
+                type="text"
+                id="name"
+                name="name"
+                value={formData.name}
+                onChange={handleInputChange}
+                placeholder="Enter your username"
+                className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                required
+              />
+            </div>
+
+            <div>
+              <label htmlFor="balance" className="block text-sm font-medium text-gray-700 mb-2">
+                <DollarSign className="w-4 h-4 inline mr-1" />
+                Initial Balance (Optional)
+              </label>
+              <input
+                type="number"
+                id="balance"
+                name="balance"
+                value={formData.balance}
+                onChange={handleInputChange}
+                placeholder="0.00"
+                step="0.0001"
+                min="0"
+                className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+              />
+              <p className="text-xs text-gray-500 mt-1">
+                Supports up to 4 decimal places (e.g., 20.5612)
+              </p>
+            </div>
+
+            <button
+              type="submit"
+              disabled={loading}
+              className="w-full bg-blue-600 text-white py-3 px-4 rounded-lg font-medium hover:bg-blue-700 focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+            >
+              {loading ? 'Creating Wallet...' : 'Create Wallet'}
+            </button>
+          </form>
+        </div>
+      </div>
+    );
   }
 
+  // Screen 1: Wallet Dashboard (when wallet exists)
   return (
     <div className="min-h-screen bg-gradient-to-br from-blue-50 to-indigo-100 p-4">
-      <div className="max-w-4xl mx-auto">
+      <div className="max-w-6xl mx-auto">
         {/* Header */}
         <div className="bg-white rounded-lg shadow-lg p-6 mb-6">
           <div className="flex items-center justify-between">
@@ -73,6 +183,14 @@ const WalletDashboard = () => {
               </div>
             </div>
             <div className="flex items-center space-x-4">
+              <button
+                onClick={handleRefresh}
+                disabled={loading}
+                className="text-gray-600 hover:text-blue-600 transition-colors"
+                title="Refresh Wallet Data"
+              >
+                <RefreshCw className={`w-5 h-5 ${loading ? 'animate-spin' : ''}`} />
+              </button>
               <Link
                 to="/transactions"
                 className="bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700 transition-colors"
@@ -100,6 +218,9 @@ const WalletDashboard = () => {
             <p className="text-gray-600 text-sm">
               Last updated: {new Date(wallet.date).toLocaleString()}
             </p>
+            <p className="text-xs text-gray-500 mt-1">
+              Data loaded via GET /wallet/{wallet.id} API
+            </p>
           </div>
 
           {/* Transaction Form */}
@@ -124,7 +245,7 @@ const WalletDashboard = () => {
                       name="type"
                       value="CREDIT"
                       checked={transactionData.type === 'CREDIT'}
-                      onChange={handleInputChange}
+                      onChange={handleTransactionInputChange}
                       className="mr-2"
                     />
                     <span className="flex items-center text-green-600">
@@ -138,7 +259,7 @@ const WalletDashboard = () => {
                       name="type"
                       value="DEBIT"
                       checked={transactionData.type === 'DEBIT'}
-                      onChange={handleInputChange}
+                      onChange={handleTransactionInputChange}
                       className="mr-2"
                     />
                     <span className="flex items-center text-red-600">
@@ -158,7 +279,7 @@ const WalletDashboard = () => {
                   id="amount"
                   name="amount"
                   value={transactionData.amount}
-                  onChange={handleInputChange}
+                  onChange={handleTransactionInputChange}
                   placeholder="0.00"
                   step="0.0001"
                   min="0.0001"
@@ -179,7 +300,7 @@ const WalletDashboard = () => {
                   id="description"
                   name="description"
                   value={transactionData.description}
-                  onChange={handleInputChange}
+                  onChange={handleTransactionInputChange}
                   placeholder="Enter transaction description"
                   className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
                   required
@@ -201,4 +322,4 @@ const WalletDashboard = () => {
   );
 };
 
-export default WalletDashboard; 
+export default WalletScreen; 

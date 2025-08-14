@@ -1,8 +1,7 @@
 import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-dom';
 import { WalletProvider, useWallet } from './context/WalletContext';
-import WalletSetup from './pages/WalletSetup';
-import WalletDashboard from './pages/WalletDashboard';
-import Transactions from './pages/Transactions';
+import WalletScreen from './pages/WalletScreen';
+import TransactionsScreen from './pages/TransactionsScreen';
 import './App.css';
 
 // Component to handle routing based on wallet state
@@ -24,11 +23,11 @@ const AppRoutes = () => {
     <Routes>
       <Route 
         path="/" 
-        element={wallet ? <WalletDashboard /> : <WalletSetup />} 
+        element={<WalletScreen />} 
       />
       <Route 
         path="/transactions" 
-        element={wallet ? <Transactions /> : <Navigate to="/" replace />} 
+        element={wallet ? <TransactionsScreen /> : <Navigate to="/" replace />} 
       />
       <Route path="*" element={<Navigate to="/" replace />} />
     </Routes>

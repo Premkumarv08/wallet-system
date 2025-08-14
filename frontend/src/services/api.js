@@ -35,7 +35,7 @@ export const walletAPI = {
   // Setup wallet
   setupWallet: (data) => api.post('/setup', data),
   
-  // Get wallet details
+  // GET /wallet/{walletID} - Get wallet details by ID
   getWallet: (id) => api.get(`/wallet/${id}`),
   
   // Create transaction

@@ -1,6 +1,7 @@
 const express = require('express');
 const cors = require('cors');
 const helmet = require('helmet');
+const swaggerUi = require('swagger-ui-express');
 
 // Import middleware
 const { errorHandler } = require('./src/middleware');
@@ -9,6 +10,9 @@ const { rateLimitMiddleware } = require('./src/middleware');
 
 // Import routes
 const routes = require('./src/routes');
+
+// Import Swagger specs
+const swaggerSpecs = require('./src/config/swagger');
 
 const app = express();
 
@@ -37,6 +41,12 @@ app.get('/health', (req, res) => {
     uptime: process.uptime()
   });
 });
+
+// Swagger documentation
+app.use('/api-docs', swaggerUi.serve, swaggerUi.setup(swaggerSpecs, {
+  customCss: '.swagger-ui .topbar { display: none }',
+  customSiteTitle: 'Wallet System API Documentation'
+}));
 
 // API routes
 app.use('/api', routes);

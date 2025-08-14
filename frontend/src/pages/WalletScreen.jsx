@@ -1,36 +1,32 @@
 import { useState } from 'react';
-import { Link } from 'react-router-dom';
 import { useWallet } from '../context/WalletContext';
-import { Wallet, ArrowUpRight, ArrowDownRight, LogOut, User, DollarSign, RefreshCw } from 'lucide-react';
+import CreateWalletModal from '../components/CreateWalletModal';
+import { 
+  Wallet, 
+  ArrowUpRight, 
+  ArrowDownRight, 
+  RefreshCw, 
+  Plus,
+  TrendingUp,
+  TrendingDown,
+  DollarSign,
+  Calendar
+} from 'lucide-react';
 
 const WalletScreen = () => {
-  const { wallet, setupWallet, createTransaction, clearWallet, refreshWallet, loading, error } = useWallet();
-  const [formData, setFormData] = useState({
-    name: '',
-    balance: ''
-  });
+  const { wallet, setupWallet, createTransaction, refreshWallet, loading, error } = useWallet();
+  const [showCreateModal, setShowCreateModal] = useState(false);
   const [transactionData, setTransactionData] = useState({
     amount: '',
     description: '',
     type: 'CREDIT'
   });
 
-  // Handle wallet setup
-  const handleWalletSetup = async (e) => {
-    e.preventDefault();
-    
-    if (!formData.name.trim()) {
-      alert('Please enter a username');
-      return;
-    }
-
-    const balance = parseFloat(formData.balance) || 0;
-    
+  // Handle wallet setup from modal
+  const handleWalletSetup = async (walletData) => {
     try {
-      await setupWallet({
-        name: formData.name.trim(),
-        balance
-      });
+      await setupWallet(walletData);
+      setShowCreateModal(false);
     } catch (err) {
       // Error is handled by the context
     }
@@ -67,26 +63,12 @@ const WalletScreen = () => {
     }
   };
 
-  const handleInputChange = (e) => {
-    const { name, value } = e.target;
-    setFormData(prev => ({
-      ...prev,
-      [name]: value
-    }));
-  };
-
   const handleTransactionInputChange = (e) => {
     const { name, value } = e.target;
     setTransactionData(prev => ({
       ...prev,
       [name]: value
     }));
-  };
-
-  const handleLogout = () => {
-    if (window.confirm('Are you sure you want to logout? This will clear your wallet data.')) {
-      clearWallet();
-    }
   };
 
   const handleRefresh = async () => {
@@ -97,72 +79,66 @@ const WalletScreen = () => {
     }
   };
 
-  // Screen 1: Wallet Initialization (when no wallet exists)
+  // Screen 1: No wallet initialized - show create wallet option
   if (!wallet) {
     return (
-      <div className="min-h-screen bg-gradient-to-br from-blue-50 to-indigo-100 flex items-center justify-center p-4">
-        <div className="max-w-md w-full bg-white rounded-lg shadow-lg p-8">
-          <div className="text-center mb-8">
-            <div className="mx-auto w-16 h-16 bg-blue-100 rounded-full flex items-center justify-center mb-4">
-              <Wallet className="w-8 h-8 text-blue-600" />
+      <div className="bg-gray-50 p-6">
+        <div className="max-w-4xl mx-auto">
+          {/* Welcome Section */}
+          <div className="text-center mb-12">
+            <div className="mx-auto w-20 h-20 bg-gradient-to-br from-blue-500 to-purple-600 rounded-2xl flex items-center justify-center mb-6">
+              <Wallet className="w-10 h-10 text-white" />
             </div>
-            <h1 className="text-3xl font-bold text-gray-900 mb-2">Welcome to Wallet System</h1>
-            <p className="text-gray-600">Create your wallet to get started</p>
+            <h1 className="text-4xl font-bold text-gray-900 mb-4">
+              Welcome to Wallet System
+            </h1>
+            <p className="text-xl text-gray-600 mb-8 max-w-2xl mx-auto">
+              Create your digital wallet to start managing transactions, track your balance, and export your financial data.
+            </p>
+            <button
+              onClick={() => setShowCreateModal(true)}
+              className="inline-flex items-center px-8 py-4 bg-gradient-to-r from-blue-500 to-purple-600 text-white rounded-xl font-semibold hover:from-blue-600 hover:to-purple-700 focus:ring-4 focus:ring-blue-500 focus:ring-offset-2 transition-all transform hover:scale-105"
+            >
+              <Plus className="w-5 h-5 mr-2" />
+              Create Your Wallet
+            </button>
           </div>
 
-          {error && (
-            <div className="mb-6 p-4 bg-red-50 border border-red-200 rounded-lg">
-              <p className="text-red-600 text-sm">{error}</p>
+          {/* Features Grid */}
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-8 mb-12">
+            <div className="bg-white rounded-xl p-6 shadow-sm border border-gray-100">
+              <div className="w-12 h-12 bg-blue-100 rounded-lg flex items-center justify-center mb-4">
+                <TrendingUp className="w-6 h-6 text-blue-600" />
+              </div>
+              <h3 className="text-lg font-semibold text-gray-900 mb-2">Track Transactions</h3>
+              <p className="text-gray-600">Monitor all your income and expenses with detailed transaction history.</p>
             </div>
-          )}
-
-          <form onSubmit={handleWalletSetup} className="space-y-6">
-            <div>
-              <label htmlFor="name" className="block text-sm font-medium text-gray-700 mb-2">
-                <User className="w-4 h-4 inline mr-1" />
-                Username *
-              </label>
-              <input
-                type="text"
-                id="name"
-                name="name"
-                value={formData.name}
-                onChange={handleInputChange}
-                placeholder="Enter your username"
-                className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-                required
-              />
+            
+            <div className="bg-white rounded-xl p-6 shadow-sm border border-gray-100">
+              <div className="w-12 h-12 bg-green-100 rounded-lg flex items-center justify-center mb-4">
+                <DollarSign className="w-6 h-6 text-green-600" />
+              </div>
+              <h3 className="text-lg font-semibold text-gray-900 mb-2">Real-time Balance</h3>
+              <p className="text-gray-600">Always know your current balance with instant updates after each transaction.</p>
             </div>
-
-            <div>
-              <label htmlFor="balance" className="block text-sm font-medium text-gray-700 mb-2">
-                <DollarSign className="w-4 h-4 inline mr-1" />
-                Initial Balance (Optional)
-              </label>
-              <input
-                type="number"
-                id="balance"
-                name="balance"
-                value={formData.balance}
-                onChange={handleInputChange}
-                placeholder="0.00"
-                step="0.0001"
-                min="0"
-                className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-              />
-              <p className="text-xs text-gray-500 mt-1">
-                Supports up to 4 decimal places (e.g., 20.5612)
-              </p>
+            
+            <div className="bg-white rounded-xl p-6 shadow-sm border border-gray-100">
+              <div className="w-12 h-12 bg-purple-100 rounded-lg flex items-center justify-center mb-4">
+                <Calendar className="w-6 h-6 text-purple-600" />
+              </div>
+              <h3 className="text-lg font-semibold text-gray-900 mb-2">Export Data</h3>
+              <p className="text-gray-600">Download your transaction history as CSV for external analysis.</p>
             </div>
+          </div>
 
-            <button
-              type="submit"
-              disabled={loading}
-              className="w-full bg-blue-600 text-white py-3 px-4 rounded-lg font-medium hover:bg-blue-700 focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
-            >
-              {loading ? 'Creating Wallet...' : 'Create Wallet'}
-            </button>
-          </form>
+          {/* Create Wallet Modal */}
+          <CreateWalletModal
+            isOpen={showCreateModal}
+            onClose={() => setShowCreateModal(false)}
+            onSubmit={handleWalletSetup}
+            loading={loading}
+            error={error}
+          />
         </div>
       </div>
     );
@@ -170,48 +146,40 @@ const WalletScreen = () => {
 
   // Screen 1: Wallet Dashboard (when wallet exists)
   return (
-    <div className="min-h-screen bg-gradient-to-br from-blue-50 to-indigo-100 p-4">
+    <div className="bg-gray-50 p-6">
       <div className="max-w-6xl mx-auto">
         {/* Header */}
-        <div className="bg-white rounded-lg shadow-lg p-6 mb-6">
+        <div className="bg-white rounded-xl shadow-sm border border-gray-100 p-6 mb-6">
           <div className="flex items-center justify-between">
-            <div className="flex items-center space-x-3">
-              <Wallet className="w-8 h-8 text-blue-600" />
+            <div className="flex items-center space-x-4">
+              <div className="w-12 h-12 bg-gradient-to-br from-blue-500 to-purple-600 rounded-xl flex items-center justify-center">
+                <Wallet className="w-6 h-6 text-white" />
+              </div>
               <div>
                 <h1 className="text-2xl font-bold text-gray-900">{wallet.name}</h1>
-                <p className="text-gray-600">Wallet ID: {wallet.id}</p>
+                <p className="text-gray-600">Wallet ID: {wallet.id ? `${wallet.id.substring(0, 4)}...${wallet.id.substring(wallet.id.length - 4)}` : 'N/A'}</p>
               </div>
             </div>
-            <div className="flex items-center space-x-4">
-              <button
-                onClick={handleRefresh}
-                disabled={loading}
-                className="text-gray-600 hover:text-blue-600 transition-colors"
-                title="Refresh Wallet Data"
-              >
-                <RefreshCw className={`w-5 h-5 ${loading ? 'animate-spin' : ''}`} />
-              </button>
-              <Link
-                to="/transactions"
-                className="bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700 transition-colors"
-              >
-                View Transactions
-              </Link>
-              <button
-                onClick={handleLogout}
-                className="text-gray-600 hover:text-red-600 transition-colors"
-                title="Logout"
-              >
-                <LogOut className="w-5 h-5" />
-              </button>
-            </div>
+            <button
+              onClick={handleRefresh}
+              disabled={loading}
+              className="p-2 text-gray-400 hover:text-blue-600 hover:bg-blue-50 rounded-lg transition-colors"
+              title="Refresh Wallet Data"
+            >
+              <RefreshCw className={`w-5 h-5 ${loading ? 'animate-spin' : ''}`} />
+            </button>
           </div>
         </div>
 
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
           {/* Balance Card */}
-          <div className="bg-white rounded-lg shadow-lg p-6">
-            <h2 className="text-lg font-semibold text-gray-900 mb-4">Current Balance</h2>
+          <div className="bg-white rounded-xl shadow-sm border border-gray-100 p-6">
+            <div className="flex items-center justify-between mb-4">
+              <h2 className="text-lg font-semibold text-gray-900">Current Balance</h2>
+              <div className="w-8 h-8 bg-green-100 rounded-lg flex items-center justify-center">
+                <DollarSign className="w-4 h-4 text-green-600" />
+              </div>
+            </div>
             <div className="text-4xl font-bold text-green-600 mb-2">
               ${parseFloat(wallet.balance).toFixed(4)}
             </div>
@@ -219,12 +187,12 @@ const WalletScreen = () => {
               Last updated: {new Date(wallet.date).toLocaleString()}
             </p>
             <p className="text-xs text-gray-500 mt-1">
-              Data loaded via GET /wallet/{wallet.id} API
+              Data loaded via GET /wallet API
             </p>
           </div>
 
           {/* Transaction Form */}
-          <div className="bg-white rounded-lg shadow-lg p-6">
+          <div className="bg-white rounded-xl shadow-sm border border-gray-100 p-6">
             <h2 className="text-lg font-semibold text-gray-900 mb-4">New Transaction</h2>
             
             {error && (
@@ -283,7 +251,7 @@ const WalletScreen = () => {
                   placeholder="0.00"
                   step="0.0001"
                   min="0.0001"
-                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                  className="w-full px-3 py-2 border border-gray-200 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
                   required
                 />
                 <p className="text-xs text-gray-500 mt-1">
@@ -302,7 +270,7 @@ const WalletScreen = () => {
                   value={transactionData.description}
                   onChange={handleTransactionInputChange}
                   placeholder="Enter transaction description"
-                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                  className="w-full px-3 py-2 border border-gray-200 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
                   required
                 />
               </div>
@@ -310,7 +278,7 @@ const WalletScreen = () => {
               <button
                 type="submit"
                 disabled={loading}
-                className="w-full bg-blue-600 text-white py-2 px-4 rounded-lg font-medium hover:bg-blue-700 focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+                className="w-full bg-gradient-to-r from-blue-500 to-purple-600 text-white py-2 px-4 rounded-lg font-medium hover:from-blue-600 hover:to-purple-700 focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 disabled:opacity-50 disabled:cursor-not-allowed transition-all"
               >
                 {loading ? 'Processing...' : 'Submit Transaction'}
               </button>

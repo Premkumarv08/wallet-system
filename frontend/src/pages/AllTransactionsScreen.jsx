@@ -1,7 +1,19 @@
 import { useState, useEffect } from 'react';
 import { useWallet } from '../context/WalletContext';
 import { walletAPI } from '../services/api';
-import { Download, ArrowUpRight, ArrowDownRight, Calendar, DollarSign, Search, ChevronLeft, ChevronRight } from 'lucide-react';
+import { 
+  Download, 
+  ArrowUpRight, 
+  ArrowDownRight, 
+  Calendar, 
+  DollarSign, 
+  Search, 
+  ChevronLeft, 
+  ChevronRight, 
+  Filter,
+  RefreshCw,
+  Wallet
+} from 'lucide-react';
 
 // Single Responsibility: Handle transaction data formatting
 const TransactionFormatter = {
@@ -24,13 +36,19 @@ const TransactionFormatter = {
 
   getTransactionColor: (amount) => {
     return amount >= 0 ? 'green' : 'red';
+  },
+
+  // Mask sensitive data
+  maskWalletId: (walletId) => {
+    if (!walletId) return 'N/A';
+    return walletId.length > 8 ? `${walletId.substring(0, 4)}...${walletId.substring(walletId.length - 4)}` : walletId;
   }
 };
 
 
 
 // Single Responsibility: Handle transaction data fetching
-const useTransactionData = (walletId, itemsPerPage) => {
+const useTransactionData = (filters, itemsPerPage) => {
   const [transactions, setTransactions] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
@@ -38,14 +56,12 @@ const useTransactionData = (walletId, itemsPerPage) => {
   const [currentPage, setCurrentPage] = useState(1);
 
   const loadTransactions = async (page = 1) => {
-    if (!walletId) return;
-    
     try {
       setLoading(true);
       setError(null);
       const skip = (page - 1) * itemsPerPage;
       const response = await walletAPI.getTransactions({
-        walletId,
+        walletId: filters.walletId,
         skip,
         limit: itemsPerPage
       });
@@ -79,7 +95,7 @@ const useTransactionData = (walletId, itemsPerPage) => {
 
   useEffect(() => {
     loadTransactions(1);
-  }, [walletId, itemsPerPage]);
+  }, [filters.walletId, itemsPerPage]);
 
   return { 
     transactions, 
@@ -207,6 +223,12 @@ const TransactionRow = ({ transaction }) => {
       </td>
       <td className="py-4 px-4 text-gray-600">
         <div className="flex items-center">
+          <Wallet className="w-4 h-4 mr-2" />
+          <span className="font-mono text-sm">{TransactionFormatter.maskWalletId(transaction.walletId)}</span>
+        </div>
+      </td>
+      <td className="py-4 px-4 text-gray-600">
+        <div className="flex items-center">
           <Calendar className="w-4 h-4 mr-2" />
           {TransactionFormatter.formatDate(transaction.date)}
         </div>
@@ -221,10 +243,51 @@ const TransactionRow = ({ transaction }) => {
   );
 };
 
+// Single Responsibility: Filter component
+const FilterPanel = ({ filters, onFilterChange, onReset, showFilters }) => {
+  if (!showFilters) return null;
+
+  return (
+    <div className="bg-white rounded-xl shadow-sm border border-gray-100 p-6 mb-6">
+      <h2 className="text-lg font-semibold text-gray-900 mb-4">Filter Transactions</h2>
+      <div className="flex items-end space-x-4">
+        <div className="flex-1">
+          <label className="block text-sm font-medium text-gray-700 mb-2">
+            <Wallet className="w-4 h-4 inline mr-1" />
+            Wallet ID
+          </label>
+          <input
+            type="text"
+            value={filters.walletId}
+            onChange={(e) => onFilterChange('walletId', e.target.value)}
+            className="w-full px-3 py-2 border border-gray-200 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+            placeholder="Enter wallet ID (required)"
+            required
+          />
+          <p className="text-xs text-gray-500 mt-1">
+            Wallet ID is required to view transactions
+          </p>
+        </div>
+        <button
+          onClick={onReset}
+          className="px-4 py-2 bg-gray-600 text-white rounded-lg hover:bg-gray-700 transition-colors"
+        >
+          Reset
+        </button>
+      </div>
+    </div>
+  );
+};
+
 // Main component
-const TransactionsScreen = () => {
+const AllTransactionsScreen = () => {
   const { wallet } = useWallet();
-  const [itemsPerPage, setItemsPerPage] = useState(10);
+  const [showFilters, setShowFilters] = useState(false);
+  const [filters, setFilters] = useState({
+    walletId: 'e6ac2547-97d7-4b14-b8e7-bfd6d454e62b' // Default to a valid wallet ID
+  });
+  
+  const itemsPerPage = 10; // Fixed items per page
   
   // Get transaction data with pagination
   const { 
@@ -235,7 +298,7 @@ const TransactionsScreen = () => {
     currentPage,
     refetch, 
     goToPage 
-  } = useTransactionData(wallet?.id, itemsPerPage);
+  } = useTransactionData(filters, itemsPerPage);
   
   // Handle pagination UI
   const totalPages = Math.max(1, Math.ceil(totalCount / itemsPerPage));
@@ -258,13 +321,13 @@ const TransactionsScreen = () => {
 
   const handleExport = async () => {
     try {
-      const response = await walletAPI.exportTransactions(wallet.id);
+      const response = await walletAPI.exportTransactions(filters.walletId || 'all');
       
       const blob = new Blob([response], { type: 'text/csv' });
       const url = window.URL.createObjectURL(blob);
       const a = document.createElement('a');
       a.href = url;
-      a.download = `transactions_${new Date().toISOString().split('T')[0]}.csv`;
+      a.download = `all_transactions_${new Date().toISOString().split('T')[0]}.csv`;
       document.body.appendChild(a);
       a.click();
       window.URL.revokeObjectURL(url);
@@ -274,31 +337,15 @@ const TransactionsScreen = () => {
     }
   };
 
-  const handleItemsPerPageChange = (newLimit) => {
-    setItemsPerPage(newLimit);
+  const handleFilterChange = (field, value) => {
+    setFilters(prev => ({ ...prev, [field]: value }));
   };
 
-  if (!wallet) {
-    return (
-      <div className="bg-gray-50 p-6">
-        <div className="max-w-4xl mx-auto text-center">
-          <div className="bg-white rounded-xl shadow-sm border border-gray-100 p-12">
-            <div className="w-16 h-16 bg-gray-100 rounded-full flex items-center justify-center mx-auto mb-4">
-              <DollarSign className="w-8 h-8 text-gray-400" />
-            </div>
-            <h2 className="text-2xl font-bold text-gray-900 mb-2">No Wallet Found</h2>
-            <p className="text-gray-600 mb-6">Please create a wallet first to view transactions.</p>
-            <button
-              onClick={() => window.location.href = '/'}
-              className="bg-gradient-to-r from-blue-500 to-purple-600 text-white px-6 py-3 rounded-xl font-medium hover:from-blue-600 hover:to-purple-700 transition-all"
-            >
-              Go to Dashboard
-            </button>
-          </div>
-        </div>
-      </div>
-    );
-  }
+  const resetFilters = () => {
+    setFilters({
+      walletId: 'e6ac2547-97d7-4b14-b8e7-bfd6d454e62b' // Reset to default wallet ID
+    });
+  };
 
   return (
     <div className="bg-gray-50 p-6">
@@ -307,10 +354,25 @@ const TransactionsScreen = () => {
         <div className="bg-white rounded-xl shadow-sm border border-gray-100 p-6 mb-6">
           <div className="flex items-center justify-between">
             <div>
-              <h1 className="text-2xl font-bold text-gray-900">Transaction History</h1>
-              <p className="text-gray-600">{wallet.name}</p>
+              <h1 className="text-2xl font-bold text-gray-900">All Transactions</h1>
+              <p className="text-gray-600">Manage and view transactions across all wallets</p>
             </div>
             <div className="flex items-center space-x-3">
+              <button
+                onClick={() => setShowFilters(!showFilters)}
+                className="flex items-center px-4 py-2 text-gray-700 bg-gray-100 hover:bg-gray-200 rounded-lg transition-colors"
+              >
+                <Filter className="w-4 h-4 mr-2" />
+                Filters
+              </button>
+              <button
+                onClick={refetch}
+                disabled={loading}
+                className="flex items-center px-4 py-2 text-gray-700 bg-gray-100 hover:bg-gray-200 rounded-lg transition-colors"
+              >
+                <RefreshCw className={`w-4 h-4 mr-2 ${loading ? 'animate-spin' : ''}`} />
+                Refresh
+              </button>
               <button
                 onClick={handleExport}
                 className="flex items-center px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 transition-colors"
@@ -322,6 +384,14 @@ const TransactionsScreen = () => {
           </div>
         </div>
 
+        {/* Filters */}
+        <FilterPanel
+          filters={filters}
+          onFilterChange={handleFilterChange}
+          onReset={resetFilters}
+          showFilters={showFilters}
+        />
+
         {/* Transactions List */}
         <div className="bg-white rounded-xl shadow-sm border border-gray-100 p-6">
           <div className="flex items-center justify-between mb-4">
@@ -331,16 +401,11 @@ const TransactionsScreen = () => {
                 <p className="text-sm text-gray-600">
                   Showing {startItem} to {endItem} of {totalCount} transactions
                 </p>
-                <select
-                  value={itemsPerPage}
-                  onChange={(e) => handleItemsPerPageChange(parseInt(e.target.value))}
-                  className="px-3 py-1 border border-gray-200 rounded-lg text-sm focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-                >
-                  <option value={5}>5 per page</option>
-                  <option value={10}>10 per page</option>
-                  <option value={20}>20 per page</option>
-                  <option value={50}>50 per page</option>
-                </select>
+                {filters.walletId && (
+                  <span className="px-2 py-1 bg-blue-100 text-blue-700 text-xs rounded-full">
+                    Filtered by: {TransactionFormatter.maskWalletId(filters.walletId)}
+                  </span>
+                )}
               </div>
             )}
           </div>
@@ -362,7 +427,9 @@ const TransactionsScreen = () => {
                 <Search className="w-8 h-8 text-gray-400" />
               </div>
               <p className="text-gray-600 text-lg">No transactions found</p>
-              <p className="text-gray-500 text-sm">Create your first transaction from the dashboard.</p>
+              <p className="text-gray-500 text-sm">
+                {filters.walletId ? 'Try adjusting your filters or check the wallet ID.' : 'No transactions exist yet.'}
+              </p>
             </div>
           ) : (
             <>
@@ -373,6 +440,7 @@ const TransactionsScreen = () => {
                       <th className="text-left py-4 px-4 font-semibold text-gray-700">Type</th>
                       <th className="text-left py-4 px-4 font-semibold text-gray-700">Amount</th>
                       <th className="text-left py-4 px-4 font-semibold text-gray-700">Description</th>
+                      <th className="text-left py-4 px-4 font-semibold text-gray-700">Wallet ID</th>
                       <th className="text-left py-4 px-4 font-semibold text-gray-700">Date</th>
                       <th className="text-left py-4 px-4 font-semibold text-gray-700">Balance</th>
                     </tr>
@@ -402,4 +470,4 @@ const TransactionsScreen = () => {
   );
 };
 
-export default TransactionsScreen; 
+export default AllTransactionsScreen; 

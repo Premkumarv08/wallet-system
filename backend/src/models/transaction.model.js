@@ -11,8 +11,8 @@ class TransactionModel {
   async findByWalletId(walletId, { skip = 0, limit = 10, orderBy = { createdAt: 'desc' } }) {
     return await prisma.transaction.findMany({
       where: { walletId },
-      skip,
-      take: limit,
+      skip: parseInt(skip),
+      take: parseInt(limit),
       orderBy
     });
   }

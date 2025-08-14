@@ -48,7 +48,7 @@ class TransactionService {
         orderBy: { createdAt: 'desc' }
       });
 
-      return transactions.map(transaction => ({
+      const formattedTransactions = transactions.map(transaction => ({
         id: transaction.id,
         walletId: transaction.walletId,
         amount: parseFloat(transaction.amount),
@@ -57,6 +57,11 @@ class TransactionService {
         date: transaction.createdAt,
         type: transaction.type
       }));
+
+      return {
+        data: formattedTransactions,
+        total: formattedTransactions.length
+      };
     } catch (error) {
       logger.error('Get transactions service error:', error);
       throw error;

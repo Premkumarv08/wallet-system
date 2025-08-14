@@ -27,6 +27,8 @@
     "mysql2": "^3.14.3",
     "papaparse": "^5.5.3",
     "prisma": "^6.14.0",
+    "swagger-jsdoc": "^6.2.8",
+    "swagger-ui-express": "^5.0.0",
     "uuid": "^11.1.0",
     "winston": "^3.17.0",
     "zod": "^4.0.17"

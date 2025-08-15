@@ -6,13 +6,10 @@ const logger = require('../config/logger');
 class WalletController {
   async setupWallet(req, res, next) {
     try {
-      // Validate request
       const validatedData = walletValidator.setupWalletSchema.parse(req.body);
       
-      // Call service
       const wallet = await walletService.setupWallet(validatedData);
       
-      // Return response
       return responseUtils.success(res, wallet, 'Wallet created successfully');
     } catch (error) {
       logger.error('Setup wallet error:', error);

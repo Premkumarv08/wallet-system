@@ -8,17 +8,9 @@ import {
   BarChart3, 
   User, 
   LogOut,
-  ChevronRight,
-  Home
+  Home,
+  BarChart2
 } from 'lucide-react';
-
-// Single Responsibility: Handle data masking
-const DataMasker = {
-  maskWalletId: (walletId) => {
-    if (!walletId) return 'N/A';
-    return walletId.length > 8 ? `${walletId.substring(0, 4)}...${walletId.substring(walletId.length - 4)}` : walletId;
-  }
-};
 
 // Single Responsibility: Navigation configuration
 const getNavigationConfig = (location, wallet) => [
@@ -38,7 +30,7 @@ const getNavigationConfig = (location, wallet) => [
   {
     name: 'All Transactions',
     href: '/all-transactions',
-    icon: BarChart3,
+    icon: BarChart2,
     current: location.pathname === '/all-transactions'
   }
 ];
@@ -138,19 +130,6 @@ const SidebarLayout = ({ children }) => {
           {/* Wallet Info */}
           {wallet && (
             <div className="p-4 border-t border-gray-200 flex-shrink-0">
-              <div className="flex items-center space-x-3 mb-3">
-                <div className="w-8 h-8 bg-green-100 rounded-full flex items-center justify-center">
-                  <User className="w-4 h-4 text-green-600" />
-                </div>
-                <div className="flex-1 min-w-0">
-                  <p className="text-sm font-medium text-gray-900 truncate">
-                    {wallet.name}
-                  </p>
-                  <p className="text-xs text-gray-500 truncate">
-                    {DataMasker.maskWalletId(wallet.id)}
-                  </p>
-                </div>
-              </div>
               <button
                 onClick={handleLogout}
                 className="w-full flex items-center justify-center px-3 py-2 text-sm font-medium text-gray-700 hover:text-red-600 hover:bg-red-50 rounded-md transition-colors"
@@ -181,14 +160,16 @@ const SidebarLayout = ({ children }) => {
               </h2>
             </div>
 
-            {/* Breadcrumb */}
-            <div className="hidden lg:flex items-center space-x-2 text-sm text-gray-500">
-              <span>Wallet System</span>
-              <ChevronRight className="w-4 h-4" />
-              <span className="text-gray-900">
-                {pageTitle}
-              </span>
-            </div>
+             <div className="flex items-center space-x-3">
+                <div className="w-8 h-8 bg-green-100 rounded-full flex items-center justify-center">
+                  <User className="w-4 h-4 text-green-600" />
+                </div>
+                <div className="flex-1 min-w-0">
+                  <p className="text-sm font-medium text-gray-900 truncate text-left">
+                    {wallet?.name}
+                  </p>
+                </div>
+              </div>
           </div>
         </div>
 

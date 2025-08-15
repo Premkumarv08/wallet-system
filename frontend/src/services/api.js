@@ -32,19 +32,14 @@ api.interceptors.response.use(
 );
 
 export const walletAPI = {
-  // Setup wallet
   setupWallet: (data) => api.post('/setup', data),
   
-  // GET /wallet/{walletID} - Get wallet details by ID
   getWallet: (id) => api.get(`/wallet/${id}`),
   
-  // Create transaction
   createTransaction: (walletId, data) => api.post(`/transact/${walletId}`, data),
   
-  // Get transactions
   getTransactions: (params) => api.get('/transactions', { params }),
   
-  // Export transactions to CSV
   exportTransactions: (walletId) => api.get(`/transactions/export/${walletId}`, {
     responseType: 'blob'
   })

@@ -6,7 +6,6 @@ import TransactionsScreen from './pages/TransactionsScreen';
 import AllTransactionsScreen from './pages/AllTransactionsScreen';
 import './App.css';
 
-// Component to handle routing based on wallet state
 const AppRoutes = () => {
   const { wallet, loading } = useWallet();
 

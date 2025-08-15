@@ -4,7 +4,7 @@ const { TRANSACTION_TYPES } = require('../config/constants');
 const logger = require('../config/logger');
 
 class WalletService {
-  async setupWallet({ balance, name }) {
+  async setupWallet({ balance = 0, name }) {
     try {
       const walletId = idUtils.generateUUID();
       const transactionId = idUtils.generateUUID();

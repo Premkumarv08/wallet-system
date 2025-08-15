@@ -1,5 +1,4 @@
 const { prisma } = require('../config/database');
-const logger = require('../config/logger');
 
 class WalletModel {
   async create({ id, balance, name }) {

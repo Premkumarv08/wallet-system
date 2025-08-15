@@ -125,7 +125,7 @@ const CreateWalletModal = ({ isOpen, onClose, onSubmit, loading, error }) => {
                   <Sparkles className="w-4 h-4 text-purple-500" />
                   <span className="text-sm font-semibold text-gray-700">What you'll get:</span>
                 </div>
-                <ul className="text-xs text-gray-600 space-y-1">
+                <ul className="text-xs text-gray-600 space-y-1 text-left">
                   <li>• Secure wallet with unique ID</li>
                   <li>• Transaction history tracking</li>
                   <li>• Real-time balance updates</li>
